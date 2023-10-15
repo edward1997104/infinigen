@@ -128,7 +128,7 @@ def build_scene(path, idx, factory_name, args):
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
     (path / 'images').mkdir(exist_ok=True)
-    imgpath = path / f"images/image_{idx:03d}.png"
+    imgpath = path / f"images/image_{args.seed:04d}.png"
     scene.render.filepath = str(imgpath)
     scene.render.resolution_x, scene.render.resolution_y = map(int, args.resolution.split('x'))
     scene.cycles.samples = args.samples
@@ -147,7 +147,7 @@ def build_scene(path, idx, factory_name, args):
         sky_texture.sun_rotation = np.pi * .75
 
     if 'Factory' in factory_name:
-        asset = build_scene_asset(factory_name, idx)
+        asset = build_scene_asset(factory_name, args.seed)
     else:
         asset = build_scene_surface(factory_name, idx)
 
@@ -168,7 +168,7 @@ def build_scene(path, idx, factory_name, args):
 
     if args.save_blend:
         (path / 'scenes').mkdir(exist_ok=True)
-        bpy.ops.wm.save_as_mainfile(filepath=f"{path}/scenes/scene_{idx:03d}.blend", filter_backup=True)
+        bpy.ops.wm.save_as_mainfile(filepath=f"{path}/scenes/scene_{args.seed:04d}.blend", filter_backup=True)
         tag_system.save_tag(f"{path}/MaskTag.json")
 
     if args.fire:
@@ -302,7 +302,7 @@ def main(args):
         fac_path.mkdir(exist_ok=True)
         for idx in range(args.n_images):
             try:
-                build_scene(fac_path, idx, factory, args)
+                build_scene(fac_path, args.seed, factory, args)
             except Exception as e:
                 print(e)
                 continue
@@ -345,6 +345,7 @@ def make_args():
     parser.add_argument('-t', '--film_transparent', default=1, type=int)
     parser.add_argument('--scale_reference', action='store_true', help="Add the scale reference")
     parser.add_argument('--skip_existing', action='store_true', help="Skip existing scenes and renders")
+    parser.add_argument('--seed', type=int)
 
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     return args
@@ -352,5 +353,5 @@ def make_args():
 
 if __name__ == '__main__':
     args = make_args()
-    with FixedSeed(1):
+    with FixedSeed(args.seed):
         main(args)
